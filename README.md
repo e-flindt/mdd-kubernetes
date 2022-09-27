@@ -70,3 +70,6 @@ git push --set-upstream origin main
 Proceed with `helm dependency update ./argocd` and `helm upgrade --install argocd ./argocd --namespace argocd --create-namespace`.
 Open https://argocd-server.argocd.svc.cluster.local in your browser.
 Run the batch file 'print-argocd-admin-password.bat' and enter the credentials into the login page of argocd.
+
+
+docker build -t urllib3-docker ./urllib3-docker

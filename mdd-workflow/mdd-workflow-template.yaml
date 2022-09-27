@@ -134,7 +134,9 @@ spec:
       parameters:
       - name: fullname
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
@@ -165,7 +167,9 @@ spec:
       parameters:
       - name: version
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
@@ -199,7 +203,9 @@ spec:
       parameters:
       - name: version
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
@@ -234,7 +240,9 @@ spec:
       parameters:
       - name: version
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
@@ -268,7 +276,9 @@ spec:
       parameters:
       - name: version
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
@@ -357,7 +367,9 @@ spec:
       parameters:
       - name: fullname
     script:
-      image: eric0606/dev:urllib3-docker
+      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
       command: [python]
       source: |
         import sys, json, urllib3
