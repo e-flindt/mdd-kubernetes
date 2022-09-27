@@ -1,0 +1,10 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: mdd-event-bus
+spec:
+  nats:
+    native:
+      replicas: 3
+      # Optional, authen strategy, "none" or "token", defaults to "none"
+      auth: token

@@ -1,0 +1,13 @@
+argo-cd:
+  # https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd
+  # https://github.com/argoproj/argo-helm/blob/main/charts/argo-cd/templates/argocd-server/ingress.yaml
+  server:
+    # https://github.com/argoproj/argo-cd/issues/2953#issuecomment-602898868
+    extraArgs: [--insecure]
+    ingress:
+      enabled: true
+      hosts: [argocd-server.argocd.svc.cluster.local]
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/ssl-passthrough: "true"

@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: on-change-webhook
+spec:
+  eventBusName: mdd-event-bus
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  webhook:
+    on-change:
+      port: "12000"
+      endpoint: /onchange
+      method: POST

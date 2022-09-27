@@ -1,0 +1,50 @@
+# Examples from : https://argoproj.github.io/argo-events/tutorials/02-parameterization/
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: on-change-sensor
+spec:
+  eventBusName: mdd-event-bus
+  template:
+    serviceAccountName: mdd-workflow-sa
+  dependencies:
+  - name: push-event
+    eventSourceName: on-change-webhook
+    eventName: on-change
+  triggers:
+  - template:
+      name: trigger-workflow
+      k8s:
+        group: ""
+        version: argoproj.io/v1alpha1
+        resource: workflows
+        operation: create
+        source:
+          resource:
+            apiVersion: argoproj.io/v1alpha1
+            kind: Workflow
+            metadata:
+              generateName: on-change-
+            spec:
+              serviceAccountName: mdd-workflow-sa
+              workflowTemplateRef:
+                name: mdd-workflow-template
+                clusterScope: true
+              arguments:
+                parameters:
+                - name: commit
+                - name: fullname
+        parameters:
+          - src:
+              dependencyName: push-event          
+              dataKey: body
+            dest: spec.arguments.parameters.0.value
+          - src:
+              dependencyName: push-event          
+              dataKey: body.repository.full_name
+            dest: spec.arguments.parameters.1.value
+          - src:
+              dependencyName: push-event          
+              dataTemplate: "{{.Input.body.repository.name | kebabcase}}-"
+            dest: metadata.generateName
+            operation: prepend

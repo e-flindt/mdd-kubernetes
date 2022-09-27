@@ -1,0 +1,72 @@
+# Thank you to vfracic at GitHub!
+# Source: https://github.com/vfarcic/argo-combined-demo/blob/master/argo-workflows/base/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workflow
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: workflow
+subjects:
+- kind: ServiceAccount
+  name: workflow
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: workflow
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
+  - watch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflows
+  verbs:
+  - create
+  - get
+
+---
+# From https://github.com/argoproj/argo-workflows/blob/master/manifests/quick-start/base/agent-role.yaml
+# https://argoproj.github.io/argo-workflows/workflow-rbac/
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent
+rules:
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflowtasksets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflowtasksets/status
+  verbs:
+  - patch

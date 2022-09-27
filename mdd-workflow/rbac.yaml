@@ -1,0 +1,35 @@
+# Thank you to vfracic at GitHub!
+# Source: https://github.com/vfarcic/argo-combined-demo/blob/master/argo-workflows/base/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mdd-workflow-sa
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mdd-workflow-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: workflow
+subjects:
+- kind: ServiceAccount
+  name: mdd-workflow-sa
+
+---
+# for http workflow execution
+# see: https://argoproj.github.io/argo-workflows/http-template/#argo-agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mdd-agent-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agent
+subjects:
+- kind: ServiceAccount
+  name: mdd-workflow-sa

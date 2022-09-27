@@ -1,0 +1,9 @@
+dependencies:
+- name: kubernetes-dashboard
+  repository: https://kubernetes.github.io/dashboard
+  version: 5.9.0
+- name: gitea
+  repository: https://dl.gitea.io/charts
+  version: 6.0.0
+digest: sha256:bf0148d83722a7d423f5a78abda1217a679549a9dce10a95f90603a7736b5cc4
+generated: "2022-09-26T15:48:07.4858166+02:00"

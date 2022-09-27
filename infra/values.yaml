@@ -1,0 +1,52 @@
+ingress-nginx:
+kubernetes-dashboard:
+  ingress:
+    enabled: true
+    className: nginx
+    hosts: [infra-kubernetes-dashboard.default.svc.cluster.local]
+gitea:
+ # https://artifacthub.io/packages/helm/gitea/gitea
+  ingress:
+    enabled: true
+    # className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - host: infra-gitea-http.default.svc.cluster.local
+        paths:
+          - path: /
+            pathType: Prefix
+  persistence: #10 Gi required
+    enabled: true
+    storageClass: manual
+    existingClaim: gitea-pvc
+  postgresql:
+    volumePermissions:
+      enabled: true
+    persistence:
+      existingClaim: postgresql-pvc
+      storageClass: manual
+    # unchanged but included for documentation purposes
+    global:
+      postgresql:
+        postgresqlDatabase: gitea
+        postgresqlUsername: gitea
+        postgresqlPassword: gitea
+  gitea:
+    config:
+      webhook:
+        ALLOWED_HOST_LIST: "*"
+      repository:
+        ENABLE_PUSH_CREATE_USER: true
+        DEFAULT_PUSH_CREATE_PRIVATE: false
+    admin:
+      username: "gitea-admin"
+      password: "password"
+# ingress accesses at port 80 over ingress
+# when using a clone url in workflow templates, the same clone url is used
+# therefore the outside port and the cluster internal port must match
+# also relevant for argo cd application resource specifications 
+  service:
+    http:
+      port: 80
+      

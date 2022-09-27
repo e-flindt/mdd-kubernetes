@@ -1,0 +1,412 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: mdd-workflow-template
+spec:
+  entrypoint: on-change
+  templates:
+
+  # On Change
+  - name: on-change
+    inputs:
+      parameters:
+      - name: commit
+      - name: fullname
+    steps:
+    - - name: increment-version
+        template: increment-version
+        arguments:
+          parameters:
+          - name: fullname
+            value: '{{inputs.parameters.fullname}}'
+    - - name: get-metamodels-step
+        template: get-metamodels-step
+        arguments:
+          parameters:
+          - name: commit
+            value: '{{inputs.parameters.commit}}'
+          - name: version
+            value: '{{steps.increment-version.outputs.result}}'
+      - name: get-inputs-step
+        template: get-inputs-step
+        arguments:
+          parameters:
+          - name: commit
+            value: '{{inputs.parameters.commit}}'
+          - name: version
+            value: '{{steps.increment-version.outputs.result}}'
+
+  - name: get-metamodels-step
+    inputs:
+      parameters:
+      - name: commit
+      - name: version
+    dag:
+      tasks:
+      - name: get-metamodels
+        template: get-metamodels
+        arguments:
+          parameters:
+          - name: version
+            value: '{{inputs.parameters.version}}'
+      - name: get-accepting-transformations-step
+        template: get-accepting-transformations-step
+        arguments:
+          parameters:
+          - name: commit
+            value: '{{inputs.parameters.commit}}'
+          - name: version
+            value: '{{item}}'
+        withParam: '{{tasks.get-metamodels.outputs.result}}'
+        depends: "get-metamodels"
+
+  - name: get-accepting-transformations-step
+    inputs:
+      parameters:
+      - name: commit
+      - name: version
+    dag:
+      tasks:
+      - name: get-accepting-transformations
+        template: get-accepting-transformations
+        arguments:
+          parameters:
+          - name: version
+            value: '{{inputs.parameters.version}}'
+      - name: transform-with-artefact
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: '{{item}} {{inputs.parameters.commit}}'
+        withParam: '{{tasks.get-accepting-transformations.outputs.result}}'
+        depends: "get-accepting-transformations"
+
+  - name: get-inputs-step
+    inputs:
+      parameters:
+      - name: commit
+      - name: version
+    dag:
+      tasks:
+      - name: get-inputs
+        template: get-inputs
+        arguments:
+          parameters:
+          - name: version
+            value: '{{inputs.parameters.version}}'
+      - name: get-instances-step
+        template: get-instances-step
+        arguments:
+          parameters:
+          - name: commit
+            value: '{{inputs.parameters.commit}}'
+          - name: version
+            value: '{{item}}'
+        withParam: '{{tasks.get-inputs.outputs.result}}'
+        depends: "get-inputs"
+
+  - name: get-instances-step
+    inputs:
+      parameters:
+      - name: commit
+      - name: version
+    dag:
+      tasks:
+      - name: get-instances
+        template: get-instances
+        arguments:
+          parameters:
+          - name: version
+            value: '{{inputs.parameters.version}}'
+      - name: transform-with-instance
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: '{{item}} {{inputs.parameters.commit}}'
+        withParam: '{{tasks.get-instances.outputs.result}}'
+        depends: "get-instances"
+
+  # Increment version of artifact
+  - name: increment-version
+    inputs:
+      parameters:
+      - name: fullname
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        fullName = '{{inputs.parameters.fullname}}'
+
+        versionPrefix = 'version-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        r = http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{fullName}/topics', headers=headers)
+        topics = json.loads(r.data.decode('utf-8'))['topics']
+        incremented = []
+        for topic in topics:
+            if topic.startswith(versionPrefix):
+                index = topic.rindex('-')
+                newVersion = topic[:index] + '-' + str(int(topic[index+1:]) + 1)
+                http.request('DELETE', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{fullName}/topics/{topic}', headers=headers)
+                http.request('PUT', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{fullName}/topics/{newVersion}', headers=headers)
+                incremented.append(newVersion)
+        json.dump(incremented[0], sys.stdout)
+
+  # Get metamodels of artefact
+  - name: get-metamodels
+    inputs:
+      parameters:
+      - name: version
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        version = {{inputs.parameters.version}}
+
+        versionPrefix = 'version-'
+        instanceofPrefix = 'instanceof-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+          return json.loads(request.data.decode('utf-8'))
+
+        metamodels = []
+        if version.startswith(versionPrefix):
+            artefactRepos = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/search?q={version}&topic=true', headers=headers))['data']
+            for artefactRepo in artefactRepos:
+                artefactFullname = artefactRepo['full_name']
+                artefactTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{artefactFullname}/topics', headers=headers))['topics']
+                for artefactTopic in artefactTopics:
+                    if artefactTopic.startswith(instanceofPrefix):
+                        metamodels.append(versionPrefix + artefactTopic[len(instanceofPrefix):])
+        json.dump(metamodels, sys.stdout)
+
+  # Get all transformation that accept instances of this version
+  - name: get-accepting-transformations
+    inputs:
+      parameters:
+      - name: version
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        version = '{{inputs.parameters.version}}'
+
+        versionPrefix = 'version-'
+        inputPrefix = 'input-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+          return json.loads(request.data.decode('utf-8'))
+
+        accepting = []
+        if version.startswith(versionPrefix):
+            instanceTopic = inputPrefix + version[len(versionPrefix):]
+            instanceRepos = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/search?q={instanceTopic}&topic=true', headers=headers))['data']
+            for instanceRepo in instanceRepos:
+                instanceFullname = instanceRepo['full_name']
+                instanceTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{instanceFullname}/topics', headers=headers))['topics']
+                for instanceTopic in instanceTopics:
+                    if instanceTopic.startswith(versionPrefix):
+                        accepting.append(instanceTopic)
+        json.dump(accepting, sys.stdout)
+
+  # Get input metamodels of artefact
+  - name: get-inputs
+    inputs:
+      parameters:
+      - name: version
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        version = {{inputs.parameters.version}}
+
+        versionPrefix = 'version-'
+        inputPrefix = 'input-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+          return json.loads(request.data.decode('utf-8'))
+
+        inputs = []
+        if version.startswith(versionPrefix):
+            artefactRepos = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/search?q={version}&topic=true', headers=headers))['data']
+            for artefactRepo in artefactRepos:
+                artefactFullname = artefactRepo['full_name']
+                artefactTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{artefactFullname}/topics', headers=headers))['topics']
+                for artefactTopic in artefactTopics:
+                    if artefactTopic.startswith(inputPrefix):
+                        inputs.append(versionPrefix + artefactTopic[len(inputPrefix):])
+        json.dump(inputs, sys.stdout)
+
+  # Get instances of metamodel
+  - name: get-instances
+    inputs:
+      parameters:
+      - name: version
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        version = '{{inputs.parameters.version}}'
+
+        versionPrefix = 'version-'
+        instanceofPrefix = 'instanceof-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+          return json.loads(request.data.decode('utf-8'))
+
+        instances = []
+        if version.startswith(versionPrefix):
+            instanceTopic = instanceofPrefix + version[len(versionPrefix):]
+            instanceRepos = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/search?q={instanceTopic}&topic=true', headers=headers))['data']
+            for instanceRepo in instanceRepos:
+                instanceFullname = instanceRepo['full_name']
+                instanceTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{instanceFullname}/topics', headers=headers))['topics']
+                for instanceTopic in instanceTopics:
+                    if instanceTopic.startswith(versionPrefix):
+                        instances.append(instanceTopic)
+        json.dump(instances, sys.stdout)
+
+  # Simple echo utility
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine
+      command: ['echo']
+      args: ['{{inputs.parameters.message}}']
+
+  - name: gen-number-list
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        result = []
+        for i in range(20, 23):
+          result.append(str(i) + '-a')
+        json.dump(result, sys.stdout)
+
+  - name: accept-and-return
+    inputs:
+      parameters:
+      - name: message
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        json.dump('{{inputs.parameters.message}}', sys.stdout)
+
+  - name: foo-bar
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        json.dump(['foo', 'bar'], sys.stdout)
+
+  - name: split-string
+    inputs:
+      parameters:
+      - name: message
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        json.dump('{{inputs.parameters.message}}'.split('-'), sys.stdout)
+
+  - name: get-version
+    inputs:
+      parameters:
+      - name: fullname
+    script:
+      image: eric0606/dev:urllib3-docker
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        fullname = sys.argv[1]
+
+        versionPrefix = 'version-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+          return json.loads(request.data.decode('utf-8'))
+
+        version = []
+        topics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{fullname}/topics', headers=headers))['topics']
+        for topic in topics:
+            if topic.startswith(versionPrefix):
+                version.append(topic)
+        if len(version) > 0:
+            v = version[0]    
+            index = topic.rindex('-')
+            versionnumber = int(topic[index+1:])
+            if versionnumber > 0:
+                json.dump(version[0], sys.stdout)
+
+  - name: sleep-n-sec
+    inputs:
+      parameters:
+      - name: seconds
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ['echo sleeping for {{inputs.parameters.seconds}} seconds; sleep {{inputs.parameters.seconds}}; echo done']
+
+  #- name: empty-commit
+  #  inputs:
+  #    parameters:
+  #    - name: clone-url
+  #    - name: commit-message
+  #  script:
+  #    image: alpine/git
+  #    command: [sh]
+  #    workingDir: /workspace
+  #    source: |        
+  #      git config user.name "gitea-admin"
+  #      git config user.email "gitea@local.domain"
+  #      git clone {{inputs.parameters.clone-url}}
+  #      git commit -m "{{inputs.parameters.commit-message}}" --allow-empty
+  #      git push
+      
