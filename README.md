@@ -1,4 +1,4 @@
-# k8-mdd
+# mdd-kubernetes
 Contains all infrastructure components for a gitops-driven mdd workflow.
 
 Thank you to vfarcic at GitHub for the great [demo](https://github.com/vfarcic/argo-combined-demo)!
@@ -73,3 +73,7 @@ Run the batch file 'print-argocd-admin-password.bat' and enter the credentials i
 
 
 docker build -t urllib3-docker ./urllib3-docker
+
+change upstream
+git remote add local-git http://infra-gitea-http.default.svc.cluster.local/gitea-admin/mdd-kubernetes.git
+git push -u local-git --all

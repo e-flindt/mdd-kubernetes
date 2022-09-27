@@ -136,6 +136,7 @@ spec:
     script:
       # image: eric0606/dev:urllib3-docker
       image: urllib3-docker
+      # https://stackoverflow.com/a/52763242
       imagePullPolicy: Never
       command: [python]
       source: |
