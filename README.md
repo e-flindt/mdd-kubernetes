@@ -77,3 +77,4 @@ docker build -t urllib3-docker ./urllib3-docker
 change upstream
 git remote add local-git http://infra-gitea-http.default.svc.cluster.local/gitea-admin/mdd-kubernetes.git
 git push -u local-git --all
+danach wieder normal git push

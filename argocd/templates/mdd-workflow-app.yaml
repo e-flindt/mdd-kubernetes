@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     path: mdd-workflow
-    repoURL: http://infra-gitea-http.default.svc.cluster.local/gitea-admin/k8-mdd
+    repoURL: http://infra-gitea-http.default.svc.cluster.local/gitea-admin/mdd-kubernetes
     targetRevision: main
   destination:
     namespace: mdd
