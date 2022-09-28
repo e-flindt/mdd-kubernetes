@@ -251,6 +251,7 @@ spec:
 
         versionPrefix = 'version-'
         inputPrefix = 'input-'
+        outputPrefix = 'output-'
 
         headers = urllib3.make_headers(basic_auth='gitea-admin:password')
         headers['Content-Type']='application/json'
