@@ -25,20 +25,15 @@ spec:
           parameters:
           - name: version
             value: '{{steps.increment-version.outputs.result}}'
-    - - name: get-consumers
-        template: get-consumers
+    - - name: consume-step
+        template: consume-step
         arguments:
           parameters:
+          - name: commit
+            value: '{{inputs.parameters.commit}}'
           - name: version
             value: '{{item}}'
         withParam: '{{steps.get-metamodels.outputs.result}}'
-    - - name: consume
-        template: echo
-        arguments:
-          parameters:
-          - name: message
-            value: '{{item}} {{inputs.parameters.commit}}'
-        withParam: '{{steps.get-consumers.outputs.result}}'
     - - name: get-transformations-step
         template: get-transformations-step
         arguments:
@@ -56,6 +51,27 @@ spec:
             value: '{{inputs.parameters.commit}}'
           - name: version
             value: '{{steps.increment-version.outputs.result}}'
+
+  - name: consume-step
+    inputs:
+      parameters:
+      - name: commit
+      - name: version
+    dag:
+      tasks:
+      - name: get-consumers
+        template: get-consumers
+        arguments:
+          parameters:
+          - name: version
+            value: '{{inputs.parameters.version}}'
+      - name: get-transformations-step
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: '{{item}} {{inputs.parameters.commit}}'
+        withParam: '{{tasks.get-consumers.outputs.result}}'
 
   - name: get-metamodels-step
     inputs:
