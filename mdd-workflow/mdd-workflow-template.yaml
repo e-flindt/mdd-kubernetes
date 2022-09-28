@@ -49,8 +49,8 @@ spec:
           parameters:
           - name: version
             value: '{{inputs.parameters.version}}'
-      - name: get-accepting-transformations-step
-        template: get-accepting-transformations-step
+      - name: get-transformations-step
+        template: get-transformations-step
         arguments:
           parameters:
           - name: commit
@@ -60,15 +60,15 @@ spec:
         withParam: '{{tasks.get-metamodels.outputs.result}}'
         depends: "get-metamodels"
 
-  - name: get-accepting-transformations-step
+  - name: get-transformations-step
     inputs:
       parameters:
       - name: commit
       - name: version
     dag:
       tasks:
-      - name: get-accepting-transformations
-        template: get-accepting-transformations
+      - name: get-transformations
+        template: get-transformations
         arguments:
           parameters:
           - name: version
@@ -79,8 +79,8 @@ spec:
           parameters:
           - name: message
             value: '{{item}} {{inputs.parameters.commit}}'
-        withParam: '{{tasks.get-accepting-transformations.outputs.result}}'
-        depends: "get-accepting-transformations"
+        withParam: '{{tasks.get-transformations.outputs.result}}'
+        depends: "get-transformations"
 
   - name: get-inputs-step
     inputs:
@@ -168,7 +168,6 @@ spec:
       parameters:
       - name: version
     script:
-      # image: eric0606/dev:urllib3-docker
       image: urllib3-docker
       imagePullPolicy: Never
       command: [python]
@@ -185,7 +184,7 @@ spec:
         http = urllib3.PoolManager()
 
         def requestToJSON(request):
-          return json.loads(request.data.decode('utf-8'))
+            return json.loads(request.data.decode('utf-8'))
 
         metamodels = []
         if version.startswith(versionPrefix):
@@ -198,13 +197,50 @@ spec:
                         metamodels.append(versionPrefix + artefactTopic[len(instanceofPrefix):])
         json.dump(metamodels, sys.stdout)
 
-  # Get all transformation that accept instances of this version
-  - name: get-accepting-transformations
+  # Get consumer of given metamodel
+  - name: get-consumers
     inputs:
       parameters:
       - name: version
     script:
-      # image: eric0606/dev:urllib3-docker
+      image: urllib3-docker
+      imagePullPolicy: Never
+      command: [python]
+      source: |
+        import sys, json, urllib3
+
+        version = sys.argv[1]
+
+        versionPrefix = 'version-'
+        inputPrefix = 'input-'
+        outputPrefix = 'output-'
+
+        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
+        headers['Content-Type']='application/json'
+        http = urllib3.PoolManager()
+
+        def requestToJSON(request):
+            return json.loads(request.data.decode('utf-8'))
+
+        accepting = []
+        if version.startswith(versionPrefix):
+            instanceTopic = inputPrefix + version[len(versionPrefix):]
+            instanceRepos = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/search?q={instanceTopic}&topic=true', headers=headers))['data']
+            for instanceRepo in instanceRepos:
+                instanceFullname = instanceRepo['full_name']
+                instanceTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{instanceFullname}/topics', headers=headers))['topics']
+                if (not any(instanceTopic.startswith(outputPrefix) for instanceTopic in instanceTopics)):
+                    for instanceTopic in instanceTopics:
+                        if instanceTopic.startswith(versionPrefix):
+                            accepting.append(instanceTopic)
+        json.dump(accepting, sys.stdout)
+
+  # Get all transformation that accept instances of this version
+  - name: get-transformations
+    inputs:
+      parameters:
+      - name: version
+    script:
       image: urllib3-docker
       imagePullPolicy: Never
       command: [python]
@@ -221,7 +257,7 @@ spec:
         http = urllib3.PoolManager()
 
         def requestToJSON(request):
-          return json.loads(request.data.decode('utf-8'))
+            return json.loads(request.data.decode('utf-8'))
 
         accepting = []
         if version.startswith(versionPrefix):
@@ -230,9 +266,10 @@ spec:
             for instanceRepo in instanceRepos:
                 instanceFullname = instanceRepo['full_name']
                 instanceTopics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{instanceFullname}/topics', headers=headers))['topics']
-                for instanceTopic in instanceTopics:
-                    if instanceTopic.startswith(versionPrefix):
-                        accepting.append(instanceTopic)
+                if any(instanceTopic.startswith(outputPrefix) for instanceTopic in instanceTopics):
+                    for instanceTopic in instanceTopics:
+                        if instanceTopic.startswith(versionPrefix):
+                            accepting.append(instanceTopic)
         json.dump(accepting, sys.stdout)
 
   # Get input metamodels of artefact
@@ -241,7 +278,6 @@ spec:
       parameters:
       - name: version
     script:
-      # image: eric0606/dev:urllib3-docker
       image: urllib3-docker
       imagePullPolicy: Never
       command: [python]
@@ -258,7 +294,7 @@ spec:
         http = urllib3.PoolManager()
 
         def requestToJSON(request):
-          return json.loads(request.data.decode('utf-8'))
+            return json.loads(request.data.decode('utf-8'))
 
         inputs = []
         if version.startswith(versionPrefix):
@@ -277,7 +313,6 @@ spec:
       parameters:
       - name: version
     script:
-      # image: eric0606/dev:urllib3-docker
       image: urllib3-docker
       imagePullPolicy: Never
       command: [python]
@@ -294,7 +329,7 @@ spec:
         http = urllib3.PoolManager()
 
         def requestToJSON(request):
-          return json.loads(request.data.decode('utf-8'))
+            return json.loads(request.data.decode('utf-8'))
 
         instances = []
         if version.startswith(versionPrefix):
@@ -368,7 +403,6 @@ spec:
       parameters:
       - name: fullname
     script:
-      # image: eric0606/dev:urllib3-docker
       image: urllib3-docker
       imagePullPolicy: Never
       command: [python]

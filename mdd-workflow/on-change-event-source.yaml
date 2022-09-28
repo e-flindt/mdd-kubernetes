@@ -6,10 +6,10 @@ spec:
   eventBusName: mdd-event-bus
   service:
     ports:
-      - port: 12000
-        targetPort: 12000
+      - port: 80
+        targetPort: 80
   webhook:
     on-change:
-      port: "12000"
+      port: "80"
       endpoint: /onchange
       method: POST
