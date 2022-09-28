@@ -31,14 +31,14 @@ spec:
           parameters:
           - name: version
             value: '{{item}}'
-        withParam: '{{tasks.get-metamodels.outputs.result}}'
+        withParam: '{{steps.get-metamodels.outputs.result}}'
     - - name: consume
         template: echo
         arguments:
           parameters:
           - name: message
             value: '{{item}} {{inputs.parameters.commit}}'
-        withParam: '{{tasks.get-consumers.outputs.result}}'
+        withParam: '{{steps.get-consumers.outputs.result}}'
     - - name: get-transformations-step
         template: get-transformations-step
         arguments:
@@ -47,7 +47,7 @@ spec:
             value: '{{inputs.parameters.commit}}'
           - name: version
             value: '{{item}}'
-        withParam: '{{tasks.get-metamodels.outputs.result}}'
+        withParam: '{{steps.get-metamodels.outputs.result}}'
       - name: get-inputs-step
         template: get-inputs-step
         arguments:
