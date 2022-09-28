@@ -229,7 +229,7 @@ spec:
       source: |
         import sys, json, urllib3
 
-        version = '{{inputs.parameters.fullname}}'
+        version = '{{inputs.parameters.version}}'
 
         versionPrefix = 'version-'
         inputPrefix = 'input-'
