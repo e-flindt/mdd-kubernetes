@@ -65,13 +65,14 @@ spec:
           parameters:
           - name: version
             value: '{{inputs.parameters.version}}'
-      - name: get-transformations-step
+      - name: consume
         template: echo
         arguments:
           parameters:
           - name: message
             value: '{{item}} {{inputs.parameters.commit}}'
         withParam: '{{tasks.get-consumers.outputs.result}}'
+        depends: 'get-consumers'
 
   - name: get-metamodels-step
     inputs:
