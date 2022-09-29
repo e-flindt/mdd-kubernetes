@@ -1,3 +1,4 @@
+# Creates an account for dashboard access
 # see https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
 # get token: kubectl -n kubernetes-dashboard create token admin-user
 apiVersion: v1

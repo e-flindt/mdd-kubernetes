@@ -45,6 +45,7 @@ repos = [
     Repository('customer-microservice', 'A model for a customer microservice', ['version-customer-ms-0', 'instanceof-microservice-0'], mddWebhook),
     Repository('shopping-cart-microservice', 'A model for a shopping cart microservice', ['version-shopping-cart-ms-0', 'instanceof-microservice-0'], mddWebhook),
     Repository('order-microservice', 'A model for an order microservice', ['version-order-ms-0', 'instanceof-microservice-0'], mddWebhook),
+    Repository('generator-validator', 'A validator for generators', ['version-generator-validator-0', 'input-trafomm-0'], mddWebhook),
     Repository('microservice-spring-boot', 'A generator for microservices to create Spring Boot applications', ['version-ms-spring-boot-0', 'instanceof-trafomm-0', 'input-microservice-0', 'output-spring-boot-0'], mddWebhook),
     Repository('microservice-dot-net', 'A generator for microservices to create Dot Net applications', ['version-ms-dot-net-0', 'instanceof-trafomm-0', 'input-microservice-0', 'output-dot-net-0'], mddWebhook),
     Repository('microservice-python', 'A generator for microservices to create Python applications', ['version-ms-python-0', 'instanceof-trafomm-0', 'input-microservice-0', 'output-python-0'], mddWebhook),

@@ -1,3 +1,6 @@
+# This event source is the target of the gitea webhook.
+# It will trigger an argo event that a sensor can react to.
+# Reachable under: http://on-change-webhook-eventsource-svc.mdd.svc.cluster.local/onchange
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:

@@ -17,7 +17,7 @@ spec:
     name: gitea-pvc
     namespace: default
   hostPath:
-    #path: "/run/desktop/mnt/host/u/Master/_Masterthesis/k8/data/gitea"
+    # Maps to C:\temp\docker-volumes/gitea
     path: "/run/desktop/mnt/host/c/temp/docker-volumes/gitea"
 ---
 apiVersion: v1
@@ -39,7 +39,7 @@ spec:
     name: postgresql-pvc
     namespace: default
   hostPath:
-    #path: "/run/desktop/mnt/host/u/Master/_Masterthesis/k8/data/postgresql"
+    # Maps to C:\temp\docker-volumes/postgresql
     path: "/run/desktop/mnt/host/c/temp/docker-volumes/postgresql"
 ---
 apiVersion: v1

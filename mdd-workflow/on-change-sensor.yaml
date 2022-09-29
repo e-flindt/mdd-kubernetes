@@ -1,4 +1,5 @@
 # Examples from : https://argoproj.github.io/argo-events/tutorials/02-parameterization/
+# This sensor is triggered when an artifact of the mdd ecosystem changes
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:

@@ -1,3 +1,7 @@
+# This template is a collection of all functions that are required for the workflow to work.
+# Requires a pre-built container image 'urllib3-docker'.
+# See https://argoproj.github.io/argo-workflows/workflow-templates/
+# and https://argoproj.github.io/argo-workflows/fields/
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterWorkflowTemplate
 metadata:
