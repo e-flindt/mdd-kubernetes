@@ -17,18 +17,23 @@ spec:
       - name: commit
       - name: fullname
     steps:
+    # This step increments the artifact version
+    # This would usually be done by the repository
     - - name: increment-version
         template: increment-version
         arguments:
           parameters:
           - name: fullname
             value: '{{inputs.parameters.fullname}}'
+    # Now all metamodels are fetched
     - - name: get-metamodels
         template: get-metamodels
         arguments:
           parameters:
           - name: version
             value: '{{steps.increment-version.outputs.result}}'
+    # This step fetches all artifacts that have metamodels as input but no output
+    # All consumer will be executed in parallel
     - - name: consume-step
         template: consume-step
         arguments:
@@ -38,6 +43,9 @@ spec:
           - name: version
             value: '{{item}}'
         withParam: '{{steps.get-metamodels.outputs.result}}'
+    # This step fetches all transformations and input metamodels in parallel
+    # Transformations will be executed as echo templates
+    # After the input metamodels are fetched, their instances will be retrieved
     - - name: get-transformations-step
         template: get-transformations-step
         arguments:
@@ -203,7 +211,7 @@ spec:
                 incremented.append(newVersion)
         json.dump(incremented[0], sys.stdout)
 
-  # Get metamodels of artefact
+  # Get metamodels of artifact
   - name: get-metamodels
     inputs:
       parameters:
@@ -394,92 +402,5 @@ spec:
       image: alpine
       command: ['echo']
       args: ['{{inputs.parameters.message}}']
-
-  - name: gen-number-list
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import json
-        import sys
-        result = []
-        for i in range(20, 23):
-          result.append(str(i) + '-a')
-        json.dump(result, sys.stdout)
-
-  - name: accept-and-return
-    inputs:
-      parameters:
-      - name: message
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import json
-        import sys
-        json.dump('{{inputs.parameters.message}}', sys.stdout)
-
-  - name: foo-bar
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import json
-        import sys
-        json.dump(['foo', 'bar'], sys.stdout)
-
-  - name: split-string
-    inputs:
-      parameters:
-      - name: message
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import json
-        import sys
-        json.dump('{{inputs.parameters.message}}'.split('-'), sys.stdout)
-
-  - name: get-version
-    inputs:
-      parameters:
-      - name: fullname
-    script:
-      image: urllib3-docker
-      imagePullPolicy: Never
-      command: [python]
-      source: |
-        import sys, json, urllib3
-
-        fullname = sys.argv[1]
-
-        versionPrefix = 'version-'
-
-        headers = urllib3.make_headers(basic_auth='gitea-admin:password')
-        headers['Content-Type']='application/json'
-        http = urllib3.PoolManager()
-
-        def requestToJSON(request):
-          return json.loads(request.data.decode('utf-8'))
-
-        version = []
-        topics = requestToJSON(http.request('GET', f'http://infra-gitea-http.default.svc.cluster.local/api/v1/repos/{fullname}/topics', headers=headers))['topics']
-        for topic in topics:
-            if topic.startswith(versionPrefix):
-                version.append(topic)
-        if len(version) > 0:
-            v = version[0]    
-            index = topic.rindex('-')
-            versionnumber = int(topic[index+1:])
-            if versionnumber > 0:
-                json.dump(version[0], sys.stdout)
-
-  - name: sleep-n-sec
-    inputs:
-      parameters:
-      - name: seconds
-    container:
-      image: alpine:latest
-      command: [sh, -c]
-      args: ['echo sleeping for {{inputs.parameters.seconds}} seconds; sleep {{inputs.parameters.seconds}}; echo done']
+      
       
