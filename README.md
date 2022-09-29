@@ -106,3 +106,4 @@ It may take a few minutes until all Argo Applications are ready.
 ## Run the workflow
 
 Either check out any of the created repositories, for example http://infra-gitea-http.default.svc.cluster.local/gitea-admin/customer-microservice.git or test the delivery of a webhook in the gitea admin UI http://infra-gitea-http.default.svc.cluster.local/gitea-admin/customer-microservice/settings/hooks
+Access the Argo Workflows UI to watch the workflow execution https://argo-workflows-server.argo.svc.cluster.local/
