@@ -79,7 +79,6 @@ pip install -r requirements.txt
 python setup-examples.py 
 ```
 
-If you want Argo CD to deploy changes made in this project to the kubernetes cluster, then
 To let Argo CD deploy Argo Workflows and Argo Events, commit everything in this directory to http://infra-gitea-http.default.svc.cluster.local/gitea-admin/mdd-kubernetes.git  
 If you cloned this repository, add the following remote and push to it:
 ```
